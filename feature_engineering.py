@@ -39,31 +39,128 @@ a signal.
 
 import numpy as np
 import pandas as pd
+import logging
+from scipy.stats import kurtosis
+from scipy import signal, fftpack
 
 
-def feat_min_value(df, signal_name):
+def feat_min_value(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
     """Calculates the minimum value of a signal"""
 
     return np.min(df[signal_name].astype("float64"))
 
 
-def feat_max_value(df, signal_name):
+def feat_max_value(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
     """Calculates the maximum value of a signal"""
 
     return np.max(df[signal_name].astype("float64"))
 
 
-def feat_rms_value(df, signal_name):
+def feat_rms_value(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
     """Calculates the root-mean-square value of a signal"""
 
     x = df[signal_name].astype("float64")
     return np.sqrt(np.mean(x ** 2))
 
 
-def feat_std_value(df, signal_name):
+def feat_std_value(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
     """Calculate the standard deviation of a signal"""
 
-    return np.std(df[signal_name].astype("float64"))
+    if spindle_main_running is False and spindle_of_interest=='spindle_main':
+        return ""
+    elif spindle_main_running is True and spindle_of_interest=='spindle_sub':
+        return ""
+    else:
+        return np.std(df[signal_name].astype("float64"))
+
+def feat_kurtosis(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
+    """Calculates the kurtosis of a signal"""
+    
+    if spindle_main_running is False and spindle_of_interest=='spindle_main':
+        return ""
+    elif spindle_main_running is True and spindle_of_interest=='spindle_sub':
+        return ""
+    else:
+        return kurtosis(df[signal_name].astype("float64"))
+
+def calc_fft(y, N):
+    '''Calculate the FFT of a signal
+    
+    Parameters
+    ===========
+    y : ndarray
+        Numpy array (or pandas series) that the FFT will be calculated on
+
+    N : int
+        Length of the cut
+    
+    '''
+    
+    y = signal.detrend(y,type == 'constant') # Detrended signal
+    T = 1.0 / 1000.0 # sample spacing
+    xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
+    
+    # frequency of y
+    yf = fftpack.rfft(y)
+    yf = 2.0/N * np.abs(yf[:int(N/2.0)])
+
+    return yf, xf
+
+def feat_freq_pk_s1(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
+    '''Calculate the amplitude of the first harmonic of the cutting frequency'''
+    
+    if spindle_main_running is False and spindle_of_interest=='spindle_main':
+        return ""
+    elif spindle_main_running is True and spindle_of_interest=='spindle_sub':
+        return ""
+    else:
+    
+        # convert to dataframe for easy manipulation
+        df_fft = pd.DataFrame(np.vstack((yf, xf)).T,columns=['amp','freq'])
+
+        # select the maximum amplitude below a certain frequency threshold
+        pk_s1 = np.max(df_fft['amp'][df_fft['freq'] < 50])
+        return pk_s1
+
+def feat_freq_pk_s1_norm(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
+    '''Calculate the normalized amplitude of the first harmonic of the cutting frequency'''
+
+    if spindle_main_running is False and spindle_of_interest=='spindle_main':
+        return ""
+    elif spindle_main_running is True and spindle_of_interest=='spindle_sub':
+        return ""
+    else:
+    
+        y_avg = np.mean(df[signal_name].to_numpy(dtype='float64'))
+
+        # convert to dataframe for easy manipulation
+        df_fft = pd.DataFrame(np.vstack((yf, xf)).T,columns=['amp','freq'])
+        
+        # select the maximum amplitude below a certain frequency threshold
+        pk_s1_norm = np.max(df_fft['amp'][df_fft['freq'] < 50]) / y_avg
+    
+        return pk_s1_norm
+
+def feat_freq_mean(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
+    '''Calculate the mean of the of the cutting frequency'''
+    
+    if spindle_main_running is False and spindle_of_interest=='spindle_main':
+        return ""
+    elif spindle_main_running is True and spindle_of_interest=='spindle_sub':
+        return ""
+    else:
+        return np.mean(yf)
+
+
+def feat_freq_std(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
+    '''Calculate the standard deviation of the cutting frequency'''
+    
+    if spindle_main_running is False and spindle_of_interest=='spindle_main':
+        return ""
+    elif spindle_main_running is True and spindle_of_interest=='spindle_sub':
+        return ""
+    else:
+        return np.std(yf)
 
 
 # _#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
@@ -138,10 +235,11 @@ def svd_columns(feature_count, list_of_signals=["current_sub", "current_main"]):
         for j in range(feature_count):
             svd_feature_dictionary["svd_" + i + "_{}".format(j)] = [i, j]
 
+
     return svd_feature_dictionary
 
 
-def feat_svd_values(svd_feature_dictionary, df, window_size):
+def feat_svd_values(svd_feature_dictionary, df, window_size,spindle_main_running,):
     """Calculate singular values of a signal.
 
     Parameters
@@ -177,31 +275,7 @@ def feat_svd_values(svd_feature_dictionary, df, window_size):
     # build trajectory matrix
     for k in signals_svd:
 
-        # try and create a trajectory matrix
-        # if it does not work, say because the cut size is less than
-        # the window size, then it will simply output "blanks"
-        try:
-            s = df[k].to_numpy("float32")
-
-            # build trajectory matrix
-            a = trajectory_matrix(s, window_size)
-
-            # use numpy linalg.svd to find the singular values
-            # https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.svd.html
-            singular_vals = np.linalg.svd(a, full_matrices=False)
-
-            # only include the first x number of singular values
-            # (the same number that matches up with the number of
-            # features in the svd_feature_dictionary)
-            singular_vals = singular_vals[1][:feature_count]
-
-            for j in range(feature_count):
-                s_key = "svd_" + k + "_{}".format(j)
-                svd_feature_dictionary[s_key].append(singular_vals[j])
-
-        except:
-            # print("#*#*ERROR#*#*#")  # print off an error
-
+        if spindle_main_running is False and k=='current_main':
             # make sure we put "blanks" in for each of the
             # features if the SVD calculation does not work
             singular_vals = [""] * feature_count
@@ -209,5 +283,47 @@ def feat_svd_values(svd_feature_dictionary, df, window_size):
             for j in range(feature_count):
                 s_key = "svd_" + k + "_{}".format(j)
                 svd_feature_dictionary[s_key].append(singular_vals[j])
+        elif spindle_main_running is True and k=='current_sub':
+            singular_vals = [""] * feature_count
+
+            for j in range(feature_count):
+                s_key = "svd_" + k + "_{}".format(j)
+                svd_feature_dictionary[s_key].append(singular_vals[j])
+        else:
+        
+            # try and create a trajectory matrix
+            # if it does not work, say because the cut size is less than
+            # the window size, then it will simply output "blanks"
+            try:
+                s = df[k].to_numpy("float32")
+
+                # build trajectory matrix
+                a = trajectory_matrix(s, window_size)
+
+                # use numpy linalg.svd to find the singular values
+                # https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.svd.html
+                singular_vals = np.linalg.svd(a, full_matrices=False)
+
+                # only include the first x number of singular values
+                # (the same number that matches up with the number of
+                # features in the svd_feature_dictionary)
+                singular_vals = singular_vals[1][:feature_count]
+
+                for j in range(feature_count):
+                    s_key = "svd_" + k + "_{}".format(j)
+                    svd_feature_dictionary[s_key].append(singular_vals[j])
+
+            except Exception as ex:
+                
+                # logging.exception('Problem with SVD calc. Skipping...')
+                # print('Error in SVD calc, likely that the cut is too small in length')
+                
+                # make sure we put "blanks" in for each of the
+                # features if the SVD calculation does not work
+                singular_vals = [""] * feature_count
+
+                for j in range(feature_count):
+                    s_key = "svd_" + k + "_{}".format(j)
+                    svd_feature_dictionary[s_key].append(singular_vals[j])
 
     return svd_feature_dictionary

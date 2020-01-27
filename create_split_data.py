@@ -36,6 +36,7 @@ from feature_engineering import (
 
 # The folder where all the raw data is stored
 raw_data_folder = Path("raw_sample_data")
+# raw_data_folder = Path('/home/tim/Documents/Checkfluid-Project/notebooks/1.7-tvh-refactor-pipeline/csv-mat_raw_data_sample')
 
 # The folders within the raw_data_folder
 # There will be multiple sub folders within the raw_data_folder
@@ -44,15 +45,17 @@ p2 = raw_data_folder / "SEPT2019"
 p3 = raw_data_folder / "OCT2018"
 
 
+# list of all folders
 path_list = [
-    p1,
-    p2,
-    p3,
+p1,p2,p3
 ]
 
 # interim data folder where the pickels of each split will be stored
 # once they are created
-interim_data_folder = Path("interim_sample_data")
+interim_data_folder = Path(
+    "interim_sample_data"
+)
+# interim_data_folder = Path('/home/tim/Documents/Checkfluid-Project/notebooks/1.7-tvh-refactor-pipeline/csv-mat_raw_data_sample')
 
 # walk through each .csv, .mat, .pickle file, and separate the cuts
 for p in path_list:

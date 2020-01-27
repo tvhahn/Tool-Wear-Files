@@ -74,8 +74,9 @@ from pathlib import Path
 import os
 import time
 from datetime import datetime
+import logging
 import pickle
-from feature_engineering import svd_columns, feat_svd_values
+from feature_engineering import svd_columns, feat_svd_values, calc_fft
 from scipy import stats
 
 
@@ -561,22 +562,23 @@ def stable_speed_section(df):
     ==========================
     -Rather than using "speed" to check which spindle is most active,
     should we use something like current instead?
-    -Using the mode to select the "stable speed" area may unnecessarily
-    reduce the cut window, especially since the "stable speed" is calculated
-    after the splitting of the cut into it's individual cuts.
-        *Consider taking the top 5 or 10 most common speeds when calculating
-        the mode. Find the min and max indices of this batch to set the window
-        on.
 
     """
 
     def find_stable_speed(df, speed_array):
 
+        # get absolute value of the speed array
+        speed_array = np.abs(speed_array)
+
         # find the most common speed value (the mode)
         mode_speed = stats.mode(speed_array)[0][0]
 
         # find the index of the most commons speed value
-        l = np.where(speed_array == mode_speed)[0]
+        percentage_val = 0.005
+        l = np.where(
+            (speed_array > (mode_speed - mode_speed * percentage_val))
+            & (speed_array < (mode_speed + mode_speed * percentage_val))
+        )[0]
 
         # now create the dataframe that only includes the range
         # of indices where the most common speed values are
@@ -658,6 +660,7 @@ def low_level_df(
     interim_path,
     features={},
     svd_feature=False,
+    fft_features=False,
     list_of_svd_signals=["current_sub", "current_main"],
     svd_feat_count=2,
     svd_window_size=100,
@@ -705,7 +708,9 @@ def low_level_df(
         features.keys()
     )
 
-    if svd_feature == True:
+    # if svd_feature is True, then create the SVD dictionary
+    # (used to create the various SVD column labels)
+    if svd_feature:
         svd_feature_dictionary = svd_columns(svd_feat_count, list_of_svd_signals)
     else:
         svd_feature_dictionary = {}
@@ -720,7 +725,6 @@ def low_level_df(
     row_index = 0
     for file in os.listdir(interim_path):
         if file.endswith(".pickle"):
-            # print(file)
 
             pickle_in = open((interim_path / file), "rb")
             df_cut = pickle.load(pickle_in)
@@ -740,16 +744,56 @@ def low_level_df(
             l_cut = len(df_cut)  # length of cuts
 
             calculated_features = []
+
+            # determine which spindle is operating, main or sub
+            # can also use the 'mean' calculations in the feature engineering functions
+            current_main_mean = np.mean(df_cut["current_main"])
+            current_sub_mean = np.mean(df_cut["current_sub"])
+
+            if current_main_mean > current_sub_mean:
+                spindle_main_running = True
+            else:
+                spindle_main_running = False
+
+            # calculate the fft, to get yf, if fft_features==True
+            if fft_features:
+                if spindle_main_running is True:
+                    yf, xf = calc_fft(
+                        df_cut["current_main"].to_numpy(dtype="float64"), l_cut
+                    )
+                else:
+                    yf, xf = calc_fft(
+                        df_cut["current_sub"].to_numpy(dtype="float64"), l_cut
+                    )
+            else:
+                yf = None
+                xf = None
+
             for feat_key in features:
-                x = features[feat_key][0](df_cut, features[feat_key][1])
-                calculated_features.append(x)
+                try:
+                    x = features[feat_key][0](
+                        df_cut,
+                        l_cut,
+                        yf,
+                        xf,
+                        spindle_main_running,
+                        features[feat_key][1],
+                        features[feat_key][2],
+                    )
+                    calculated_features.append(x)
+
+                except Exception as ex:
+                    logging.exception("Error in code")
+                    print("Error with file ", file)
+                    calculated_features.append("")
 
             if svd_feature == True:
                 svd_feature_dictionary = svd_columns(
                     svd_feat_count, list_of_svd_signals
                 )
+
                 svd_results = feat_svd_values(
-                    svd_feature_dictionary, df_cut, svd_window_size
+                    svd_feature_dictionary, df_cut, svd_window_size, spindle_main_running
                 )
 
                 for svd_key in svd_results:
