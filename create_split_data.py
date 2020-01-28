@@ -5,16 +5,10 @@ cut signal is 0 or 1).
 
 """
 
-import scipy.io as sio
 import numpy as np
-import pandas as pd
 import pickle
+import sys
 import os
-import re
-import matplotlib.pyplot as plt
-import time
-from datetime import datetime
-import pickle
 
 from pathlib import Path
 from load_data import (
@@ -40,15 +34,14 @@ raw_data_folder = Path("raw_sample_data")
 
 # The folders within the raw_data_folder
 # There will be multiple sub folders within the raw_data_folder
-p1 = raw_data_folder / "NOV2019"
-p2 = raw_data_folder / "SEPT2019"
-p3 = raw_data_folder / "OCT2018"
+p1 = raw_data_folder / sys.argv[1]
+# p1 = raw_data_folder / "NOV2019"
+# p2 = raw_data_folder / "SEPT2019"
+# p3 = raw_data_folder / "OCT2018"
 
 
 # list of all folders
-path_list = [
-p1,p2,p3
-]
+path_list = [p1]
 
 # interim data folder where the pickels of each split will be stored
 # once they are created
