@@ -13,8 +13,12 @@ import os
 import re
 import matplotlib.pyplot as plt
 import time
+import sys
 from datetime import datetime
 import pickle
+from zipfile import ZipFile
+import zipfile
+import zlib
 from pathlib import Path
 from load_data import (
     load_cut_files,
@@ -65,11 +69,24 @@ high_level_label_location = Path(
     "high_level_LABELLED.csv"
 )
 
+# setup the location where the split cut data will be stored.
+# folder location will be created if does not already exist
+Path("~/scratch/interim_data_sample").mkdir(parents=True, exist_ok=True)
+scratch_path = Path("~/scratch/interim_data_sample")
+
+file_name = sys.argv[1]
+file_folder_index = file_name.split(sep='.')[0]
+
+# extract zip file
+with ZipFile(file_name,'r') as zip_file:
+    # setup the location where the split cut data will be stored.
+    # folder location will be created if does not already exist
+    Path(file_folder_index).mkdir(parents=True, exist_ok=True)
+    zip_file.extractall(path=(scratch_path / file_folder_index))
+
 # location of all the split signals (these are all the pickles that were created in the create_split_data.py)
-split_data_folder = Path(
-    "interim_sample_data"
-)
-# split_data_folder = Path('/home/tim/Documents/Checkfluid-Project/notebooks/1.7-tvh-refactor-pipeline/_test')
+split_data_folder = scratch_path / file_folder_index 
+
 
 # read the high_level csv
 df1 = pd.read_csv(high_level_label_location)
@@ -90,6 +107,8 @@ df2 = low_level_df(
 # label the individual cuts in the low-level df as failed or not
 df_low = check_date(df1, df2)
 
+name_of_csv = "low_level_labels_TEST_{}.csv".format(str(file_folder_index))
+
 # save as a csv
-df_low.to_csv(("low_level_labels_TEST.csv"), index=False)
+df_low.to_csv((name_of_csv), index=False)
 df_low.head()
