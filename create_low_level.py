@@ -71,8 +71,8 @@ high_level_label_location = Path(
 
 # setup the location where the split cut data will be stored.
 # folder location will be created if does not already exist
-Path("~/scratch/interim_data_sample").mkdir(parents=True, exist_ok=True)
-scratch_path = Path("~/scratch/interim_data_sample")
+Path("/home/tvhahn/scratch/interim_data_sample").mkdir(parents=True, exist_ok=True)
+scratch_path = Path("/home/tvhahn/scratch/interim_data_sample")
 
 file_name = sys.argv[1]
 file_folder_index = file_name.split(sep='.')[0]
