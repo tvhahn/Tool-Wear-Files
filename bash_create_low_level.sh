@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --time=00:10:00 # 10 minutes
-#SBATCH --array=1-7
+#SBATCH --time=01:00:00 # 1 hour
+#SBATCH --array=1-92
 #SBATCH --mem=1G
 #SBATCH --mail-type=ALL               # Type of email notification- BEGIN,END,F$
 #SBATCH --mail-user=18tcvh@queensu.ca   # Email to which notifications will be $

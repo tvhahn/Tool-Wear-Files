@@ -70,12 +70,12 @@ high_level_label_location = Path(
 )
 
 # location of the zip folders containing the split pickles
-zip_path = Path('zip_interim_sample_data')
+zip_path = Path('/home/tvhahn/projects/def-mechefsk/tvhahn/split_data_stable_speed_no_pad_ind_2020.01.21_ZIP')
 
 # setup the location where the split cut data will be stored.
 # folder location will be created if does not already exist
-Path("/home/tvhahn/scratch/interim_data_sample").mkdir(parents=True, exist_ok=True)
-scratch_path = Path("/home/tvhahn/scratch/interim_data_sample")
+Path("/home/tvhahn/scratch/interim_data").mkdir(parents=True, exist_ok=True)
+scratch_path = Path("/home/tvhahn/scratch/interim_data")
 
 file_name = sys.argv[1]
 file_folder_index = file_name.split(sep='.')[0]
@@ -113,7 +113,7 @@ df_low = check_date(df1, df2)
 Path("temp_csv").mkdir(parents=True, exist_ok=True)
 
 
-name_of_csv = "temp_csv/low_level_labels_TEST_{}.csv".format(str(file_folder_index))
+name_of_csv = "temp_csv/low_level_labels_{}.csv".format(str(file_folder_index))
 
 # save as a csv
 df_low.to_csv((name_of_csv), index=False)
