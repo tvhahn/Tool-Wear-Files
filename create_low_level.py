@@ -84,7 +84,6 @@ file_folder_index = file_name.split(sep='.')[0]
 with ZipFile(zip_path / file_name,'r') as zip_file:
     # setup the location where the split cut data will be stored.
     # folder location will be created if does not already exist
-    Path(file_folder_index).mkdir(parents=True, exist_ok=True)
     zip_file.extractall(path=(scratch_path / file_folder_index))
 
 # location of all the split signals (these are all the pickles that were created in the create_split_data.py)
@@ -110,7 +109,11 @@ df2 = low_level_df(
 # label the individual cuts in the low-level df as failed or not
 df_low = check_date(df1, df2)
 
-name_of_csv = "low_level_labels_TEST_{}.csv".format(str(file_folder_index))
+# create a save folder for the CSVs
+Path("temp_csv").mkdir(parents=True, exist_ok=True)
+
+
+name_of_csv = "temp_csv/low_level_labels_TEST_{}.csv".format(str(file_folder_index))
 
 # save as a csv
 df_low.to_csv((name_of_csv), index=False)
