@@ -118,3 +118,4 @@ name_of_csv = "temp_csv/low_level_labels_{}.csv".format(str(file_folder_index))
 # save as a csv
 df_low.to_csv((name_of_csv), index=False)
 df_low.head()
+print('Created file: ', name_of_csv)
