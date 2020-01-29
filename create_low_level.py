@@ -69,6 +69,9 @@ high_level_label_location = Path(
     "high_level_LABELLED.csv"
 )
 
+# location of the zip folders containing the split pickles
+zip_path = Path('zip_interim_sample_data')
+
 # setup the location where the split cut data will be stored.
 # folder location will be created if does not already exist
 Path("/home/tvhahn/scratch/interim_data_sample").mkdir(parents=True, exist_ok=True)
@@ -78,7 +81,7 @@ file_name = sys.argv[1]
 file_folder_index = file_name.split(sep='.')[0]
 
 # extract zip file
-with ZipFile(file_name,'r') as zip_file:
+with ZipFile(zip_path / file_name,'r') as zip_file:
     # setup the location where the split cut data will be stored.
     # folder location will be created if does not already exist
     Path(file_folder_index).mkdir(parents=True, exist_ok=True)
