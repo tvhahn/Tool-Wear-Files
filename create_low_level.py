@@ -66,7 +66,7 @@ features = {"min_current_main":[feat_min_value, "current_main", 'spindle_main'],
 
 # location of the high_level csv that has been labelled with faile/not-failed labels
 high_level_label_location = Path(
-    "high_level_LABELLED.csv"
+    "_label_csv_data/high_level_labels_MASTER_2019-11-27_15before_nobroken.csv"
 )
 
 # location of the zip folders containing the split pickles
