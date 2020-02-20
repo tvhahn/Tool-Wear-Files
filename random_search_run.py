@@ -45,7 +45,7 @@ warnings.warn = warn
 
 # set a seed for the parameter sampler
 sampler_seed = random.randint(0,2**16)
-no_iterations = 25
+no_iterations = 5000
 
 # create list of tools that we want to look over
 # these are only the tools that we know we have wear-failures
@@ -59,14 +59,14 @@ average_across_indices = [True, False]
 
 # list of classifiers to test
 classifier_list_all = [
-    # random_forest_classifier,
-    # knn_classifier,
-    # logistic_regression,
-    # sgd_classifier,
-    # ridge_classifier,
-    # svm_classifier,
+    random_forest_classifier,
+    knn_classifier,
+    logistic_regression,
+    sgd_classifier,
+    ridge_classifier,
+    svm_classifier,
     gaussian_nb_classifier,
-    # xgboost_classifier,
+    xgboost_classifier,
 ]
 
 over_under_sampling_methods = [
@@ -240,7 +240,7 @@ for i, p in enumerate(p_list):
             uo_sample_method=uo_method,
             imbalance_ratio=imbalance_ratio,
             train_on_all=False,
-            print_results=True,
+            print_results=False,
         )
 
 
@@ -254,10 +254,10 @@ for i, p in enumerate(p_list):
                 pd.concat([df_gpam, df_cpam, df_result_dict], axis=1)
             )
 
-        save_directory = Path('/home/tvhahn/projects/def-mechefsk/tvhahn/_temp_parameter_search')
+        save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
 
         file_save_name = 'temp_result_{}_{}.csv'.format(str(date_time),str(sampler_seed))
-        if i % 20 == 0:
+        if i % 50 == 0:
             df_results.to_csv(save_directory / file_save_name,index=False)
 
     except ValueError as err:
