@@ -32,10 +32,7 @@ from classification_methods import (
 # https://stackoverflow.com/questions/32612180/eliminating-warnings-from-scikit-learn
 def warn(*args, **kwargs):
     pass
-
-
 import warnings
-
 warnings.warn = warn
 
 # to profile script for memory usage, use:
@@ -47,8 +44,8 @@ warnings.warn = warn
 # fill these out to set parameters for the random search
 
 # set a seed for the parameter sampler
-sampler_seed = random.randint(0, 2 ** 16)
-no_iterations = 1
+sampler_seed = random.randint(0,2**16)
+no_iterations = 25
 
 # create list of tools that we want to look over
 # these are only the tools that we know we have wear-failures
@@ -62,13 +59,13 @@ average_across_indices = [True, False]
 
 # list of classifiers to test
 classifier_list_all = [
-    # random_forest_classifier,l
-    knn_classifier,
+    # random_forest_classifier,
+    # knn_classifier,
     # logistic_regression,
     # sgd_classifier,
     # ridge_classifier,
     # svm_classifier,
-    # gaussian_nb_classifier,
+    gaussian_nb_classifier,
     # xgboost_classifier,
 ]
 
@@ -80,6 +77,7 @@ over_under_sampling_methods = [
     "adasyn",
     None,
 ]
+
 
 
 #############################################################################
@@ -196,7 +194,7 @@ for i, p in enumerate(p_list):
     len_data = len(y_train)
     # check if not enough labels in y_train
     no_label_failed = np.sum(y_train)
-
+    
     seed_indexer = 0
     while len_data < 20 or no_label_failed < 15:
         random.seed(p["parameter_sampler_random_int"] + seed_indexer)
@@ -213,15 +211,15 @@ for i, p in enumerate(p_list):
             generic_feat_list=feat_list,
         )
 
-        parameter_values["indices_to_keep"] = indices_to_keep
-        parameter_values["tool_list"] = tool_list
+        parameter_values['indices_to_keep'] = indices_to_keep
+        parameter_values['tool_list'] = tool_list
 
         len_data = len(y_train)
         no_label_failed = np.sum(y_train)
         seed_indexer += 1
 
-    parameter_values["info_no_samples"] = len_data
-    parameter_values["info_no_failures"] = no_label_failed
+    parameter_values['info_no_samples'] = len_data
+    parameter_values['info_no_failures'] = no_label_failed
 
     # save the general parameters values
     df_gpam = pd.DataFrame.from_dict(parameter_values, orient="index").T
@@ -245,8 +243,9 @@ for i, p in enumerate(p_list):
             print_results=True,
         )
 
+
         df_result_dict = pd.DataFrame.from_dict(result_dict, orient="index").T
-        df_result_dict.astype("float16").dtypes
+        df_result_dict.astype('float16').dtypes
 
         if i == 0:
             df_results = pd.concat([df_gpam, df_cpam, df_result_dict], axis=1)
@@ -255,15 +254,18 @@ for i, p in enumerate(p_list):
                 pd.concat([df_gpam, df_cpam, df_result_dict], axis=1)
             )
 
-        if i % 50 == 0:
-            df_results.to_csv("temp_result_{}.csv".format(str(date_time)), index=False)
+        save_directory = Path('/home/tvhahn/projects/def-mechefsk/tvhahn/_temp_parameter_search')
+
+        file_save_name = 'temp_result_{}_{}.csv'.format(str(date_time),str(sampler_seed))
+        if i % 20 == 0:
+            df_results.to_csv(save_directory / file_save_name,index=False)
 
     except ValueError as err:
         print(err)
-        print("#!#!#!#!#! SKIPPING")
+        print('#!#!#!#!#! SKIPPING')
         pass
     except:
         pass
 
-df_results.to_csv("temp_result_{}.csv".format(str(date_time)), index=False)
+df_results.to_csv(save_directory / file_save_name,index=False)
 
