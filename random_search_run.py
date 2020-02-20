@@ -257,7 +257,7 @@ for i, p in enumerate(p_list):
         save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
 
         file_save_name = 'temp_result_{}_{}.csv'.format(str(date_time),str(sampler_seed))
-        if i % 50 == 0:
+        if i % 10 == 0:
             df_results.to_csv(save_directory / file_save_name,index=False)
 
     except ValueError as err:
