@@ -49,7 +49,7 @@ warnings.warn = warn
 
 # set a seed for the parameter sampler
 sampler_seed = random.randint(0, 2 ** 16)
-no_iterations = 10
+no_iterations = 5000
 
 # create list of tools that we want to look over
 # these are only the tools that we know we have wear-failures
@@ -64,14 +64,14 @@ average_across_indices = [True, False]
 
 # list of classifiers to test
 classifier_list_all = [
-    # random_forest_classifier,
-    # knn_classifier,
-    # logistic_regression,
-    # sgd_classifier,
-    # ridge_classifier,
-    # svm_classifier,
+    random_forest_classifier,
+    knn_classifier,
+    logistic_regression,
+    sgd_classifier,
+    ridge_classifier,
+    svm_classifier,
     gaussian_nb_classifier,
-    # xgboost_classifier,
+    xgboost_classifier,
 ]
 
 over_under_sampling_methods = [
@@ -97,15 +97,11 @@ index_list = [
 
 #############################################################################
 # start by loading the csv with the features
-file_folder = Path(
-    "/home/tim/Documents/Checkfluid-Project/data/processed/"
-    "_tables/low_level_labels_created_2020-01-30"
-)
 
 # for HPC
-# file_folder = Path(
-#     "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_level_labels_created_2020-01-30"
-# )
+file_folder = Path(
+    "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_level_labels_created_2020-01-30"
+)
 
 file = file_folder / "low_level_labels_created_2020-01-27.csv"
 
@@ -281,8 +277,8 @@ for i, p in enumerate(p_list):
             )
 
         # save directory for when on the HPC
-        # save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
-        save_directory = Path().absolute()
+        save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
+        # save_directory = Path().absolute()
 
         file_save_name = "temp_result_{}_{}_{}.csv".format(
             str(date_time), str(sys.argv[1]), str(sampler_seed)
