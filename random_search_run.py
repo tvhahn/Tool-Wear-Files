@@ -33,7 +33,10 @@ from classification_methods import (
 # https://stackoverflow.com/questions/32612180/eliminating-warnings-from-scikit-learn
 def warn(*args, **kwargs):
     pass
+
+
 import warnings
+
 warnings.warn = warn
 
 # to profile script for memory usage, use:
@@ -45,12 +48,13 @@ warnings.warn = warn
 # fill these out to set parameters for the random search
 
 # set a seed for the parameter sampler
-sampler_seed = random.randint(0,2**16)
-no_iterations = 5000
+sampler_seed = random.randint(0, 2 ** 16)
+no_iterations = 10
 
 # create list of tools that we want to look over
 # these are only the tools that we know we have wear-failures
 tool_list_all = [57, 54, 32, 36, 22, 8, 2]
+tool_list_some = [57, 32, 22, 8, 2]
 
 # other parameters
 scaler_methods = ["standard", "min_max"]
@@ -60,14 +64,14 @@ average_across_indices = [True, False]
 
 # list of classifiers to test
 classifier_list_all = [
-    random_forest_classifier,
-    knn_classifier,
-    logistic_regression,
-    sgd_classifier,
-    ridge_classifier,
-    svm_classifier,
+    # random_forest_classifier,
+    # knn_classifier,
+    # logistic_regression,
+    # sgd_classifier,
+    # ridge_classifier,
+    # svm_classifier,
     gaussian_nb_classifier,
-    xgboost_classifier,
+    # xgboost_classifier,
 ]
 
 over_under_sampling_methods = [
@@ -79,13 +83,29 @@ over_under_sampling_methods = [
     None,
 ]
 
+# no cut indices past 9 that are valid
+index_list = [
+    list(range(0, 10)),
+    list(range(1, 10)),
+    list(range(1, 9)),
+    list(range(1, 8)),
+    list(range(2, 8)),
+    list(range(2, 9)),
+    list(range(2, 10))
+]  
 
 
 #############################################################################
 # start by loading the csv with the features
 file_folder = Path(
-    "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_level_labels_created_2020-01-30"
+    "/home/tim/Documents/Checkfluid-Project/data/processed/"
+    "_tables/low_level_labels_created_2020-01-30"
 )
+
+# for HPC
+# file_folder = Path(
+#     "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_level_labels_created_2020-01-30"
+# )
 
 file = file_folder / "low_level_labels_created_2020-01-27.csv"
 
@@ -118,15 +138,16 @@ for feat in list(df_train.columns):
 
 # parameter dictionary for random sampler to go over
 parameters_sample_dict = {
-    "no_tools": sp_randint(1, len(tool_list_all)),
+    "no_tools": sp_randint(0, len(tool_list_some)),
     "no_feat": sp_randint(1, len(feat_generic_all)),
-    "no_indices": sp_randint(1, 19),
     "classifier_used": classifier_list_all,
     "average_across_index": average_across_indices,
     "uo_method": over_under_sampling_methods,
     "scaler_method": scaler_methods,
     "parameter_sampler_random_int": sp_randint(0, 2 ** 16),
     "imbalance_ratio": imbalance_ratios,
+    # additional parameters to narrow down random search
+    "index_list": index_list,
 }
 
 # generate the list of parameters to sample over
@@ -148,9 +169,12 @@ for i, p in enumerate(p_list):
 
     # get specific parameters
     clf_name = str(p["classifier_used"]).split(" ")[1]
-    tool_list = sorted(random.sample(tool_list_all, p["no_tools"]))
-    feat_list = sorted(random.sample(feat_generic_all, p["no_tools"]))
-    indices_to_keep = sorted(random.sample(range(0, 19), p["no_indices"]))
+    tool_list = sorted(
+        random.sample(tool_list_some, p["no_tools"])
+        + random.sample([54, 36], random.randint(1, 2))
+    )
+    feat_list = sorted(random.sample(feat_generic_all, p["no_feat"]))
+    indices_to_keep = p["index_list"]
     to_avg = p["average_across_index"]
     uo_method = p["uo_method"]
 
@@ -171,6 +195,7 @@ for i, p in enumerate(p_list):
         "indices_to_keep": indices_to_keep,
         "info_no_samples": None,
         "info_no_failures": None,
+        "info_no_feat": p["no_feat"],
         "to_average": to_avg,
         "uo_method": uo_method,
         "imbalance_ratio": imbalance_ratio,
@@ -195,12 +220,14 @@ for i, p in enumerate(p_list):
     len_data = len(y_train)
     # check if not enough labels in y_train
     no_label_failed = np.sum(y_train)
-    
+
     seed_indexer = 0
     while len_data < 20 or no_label_failed < 15:
         random.seed(p["parameter_sampler_random_int"] + seed_indexer)
-        indices_to_keep = sorted(random.sample(range(0, 19), p["no_indices"]))
-        tool_list = sorted(random.sample(tool_list_all, p["no_tools"]))
+        tool_list = sorted(
+            random.sample(tool_list_some, p["no_tools"])
+            + random.sample([54, 36], random.randint(1, 2))
+        )
         # print("Revised Indices: ", indices_to_keep)
         # print("Revised tool_list: ", tool_list)
 
@@ -212,15 +239,14 @@ for i, p in enumerate(p_list):
             generic_feat_list=feat_list,
         )
 
-        parameter_values['indices_to_keep'] = indices_to_keep
-        parameter_values['tool_list'] = tool_list
+        parameter_values["tool_list"] = tool_list
 
         len_data = len(y_train)
         no_label_failed = np.sum(y_train)
         seed_indexer += 1
 
-    parameter_values['info_no_samples'] = len_data
-    parameter_values['info_no_failures'] = no_label_failed
+    parameter_values["info_no_samples"] = len_data
+    parameter_values["info_no_failures"] = no_label_failed
 
     # save the general parameters values
     df_gpam = pd.DataFrame.from_dict(parameter_values, orient="index").T
@@ -244,9 +270,8 @@ for i, p in enumerate(p_list):
             print_results=False,
         )
 
-
         df_result_dict = pd.DataFrame.from_dict(result_dict, orient="index").T
-        df_result_dict.astype('float16').dtypes
+        df_result_dict.astype("float16").dtypes
 
         if i == 0:
             df_results = pd.concat([df_gpam, df_cpam, df_result_dict], axis=1)
@@ -255,18 +280,22 @@ for i, p in enumerate(p_list):
                 pd.concat([df_gpam, df_cpam, df_result_dict], axis=1)
             )
 
-        save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
+        # save directory for when on the HPC
+        # save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
+        save_directory = Path().absolute()
 
-        file_save_name = 'temp_result_{}_{}_{}.csv'.format(str(date_time),str(sys.argv[1]),str(sampler_seed))
-        if i % 10 == 0:
-            df_results.to_csv(save_directory / file_save_name,index=False)
+        file_save_name = "temp_result_{}_{}_{}.csv".format(
+            str(date_time), str(sys.argv[1]), str(sampler_seed)
+        )
+        if i % 20 == 0:
+            df_results.to_csv(save_directory / file_save_name, index=False)
 
     except ValueError as err:
         print(err)
-        print('#!#!#!#!#! SKIPPING')
+        print("#!#!#!#!#! SKIPPING")
         pass
     except:
         pass
 
-df_results.to_csv(save_directory / file_save_name,index=False)
+df_results.to_csv(save_directory / file_save_name, index=False)
 
