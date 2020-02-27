@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 from sklearn.base import clone
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import StratifiedKFold
+from sklearn.utils import shuffle
 
 from sklearn.metrics import (
     roc_auc_score,
@@ -19,6 +21,7 @@ from imblearn.over_sampling import RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import SMOTE, ADASYN
 from collections import Counter
+from itertools import combinations
 
 # function for selecting a tool in a df, and returning a df with generic names
 def make_generic_df(df, tool_no):
@@ -48,6 +51,7 @@ def make_generic_df(df, tool_no):
         df = df[feat_main].set_axis(feat_generic, axis=1, inplace=False)
     else:
         df = df[feat_sub].set_axis(feat_generic, axis=1, inplace=False)
+
 
     return df
 
@@ -96,6 +100,9 @@ def get_xy_from_df(
                     .groupby(["unix_date"], as_index=False)
                     .mean()
                 )
+
+                df_merge['date_ymd'] = df[(df["tool"] == i) & (df["index"].isin(indices_to_keep))].groupby(["unix_date"], as_index=False).first()['date_ymd']     
+
                 index_count += 1
 
             else:
@@ -104,6 +111,9 @@ def get_xy_from_df(
                     .groupby(["unix_date"], as_index=False)
                     .mean()
                 )
+
+                df_temp['date_ymd'] = df[(df["tool"] == i) & (df["index"].isin(indices_to_keep))].groupby(["unix_date"], as_index=False).first()['date_ymd']
+
                 df_merge = df_merge.append(df_temp, ignore_index=True)
 
     # if we want to keep the individual indices separate
@@ -112,16 +122,18 @@ def get_xy_from_df(
             (df["tool"].isin(tool_list)) & (df["index"].isin(indices_to_keep))
         ]
 
-    df_merge = df_merge[generic_feat_list].astype({"failed": "int"})
+    df_merge = df_merge[generic_feat_list + ['date_ymd']].astype({"failed": "int"})
     df_merge = df_merge[
         df_merge["failed"].isin([0, 1])
-    ].dropna()  # only keep 0, 1 failed labels
+    ].dropna().reset_index(drop=True)  # only keep 0, 1 failed labels
 
     # now we will create the X and y data sets
     y = df_merge["failed"].values
-    X = df_merge.drop(columns=["failed"]).to_numpy()
+    X = df_merge.drop(columns=["failed","date_ymd"]).to_numpy()
 
-    return X, y, df_merge
+    df_ymd_only = df_merge['date_ymd']
+
+    return X, y, df_ymd_only
 
 
 def under_over_sampler(X, y, method=None, ratio=0.5):
@@ -198,6 +210,209 @@ def calculate_scores(clf, X_test, y_test):
     f1_result = f1_score(y_test, y_pred)
 
     return auc_score, roc_score, precision_result, recall_result, f1_result
+
+def classifier_train_manual(
+    X_train,
+    y_train,
+    df_ymd_only,
+    train_folds,
+    clf,
+    scaler_method="standard",
+    uo_sample_method=None,
+    imbalance_ratio=1,
+    train_on_all=False, print_results=False
+):
+
+    """Trains a sklearn classifier on a single fold of training data. Returns the ROC_AUC score, with other
+    parameters in a pandas df.
+    
+    
+    To-Do:
+        - When using SVM, only use under sampling when feature count over a certain size, 
+        otherwise will blow up
+    """
+
+
+    
+    # below code is modified from 'Hands on Machine Learning' by Geron (pg. 196)
+    roc_auc_results = []
+    auc_results = []
+    precision_results = []
+    recall_results = []
+    f1_results = []
+
+    if print_results == True:
+    # print definitions of precision / recall
+        print(
+            "\033[1m",
+            "Precision:",
+            "\033[0m",
+            "What proportion of positive identifications were actually correct?",
+        )
+        print(
+            "\033[1m",
+            "Recall:",
+            "\033[0m",
+            "What proportion of actual positives were identified correctly?",
+        )
+
+    k_fold_combinations = list(combinations(train_folds,len(train_folds)-1))
+    dates_all = [date for sublist in train_folds for date in sublist]
+
+    k_fold_no = float(len(train_folds))
+
+    # implement cross-validation with 
+    for i, folds in enumerate(k_fold_combinations):
+        
+        # get the train and test dates for each combination
+        train_dates = []
+        for fold in folds:
+            train_dates.extend(fold)
+        test_dates = list(set(dates_all)-set(train_dates))
+        
+        # get the train and test indices
+        train_index = df_ymd_only[df_ymd_only.isin(train_dates)].index.values.astype(int)
+        test_index = df_ymd_only[df_ymd_only.isin(test_dates)].index.values.astype(int)
+
+        # use clone to do a deep copy of model without copying attached data
+        # https://scikit-learn.org/stable/modules/generated/sklearn.base.clone.html
+        clone_clf = clone(clf)
+        X_train_fold = X_train[train_index]
+        y_train_fold = y_train[train_index]
+
+        # get the test folds
+        X_test_fold = X_train[test_index]
+        y_test_fold = y_train[test_index]
+
+        # shuffle data, just in case
+        X_train_fold, y_train_fold = shuffle(X_train_fold, y_train_fold, random_state=0)
+        X_test_fold, y_test_fold = shuffle(X_test_fold, y_test_fold, random_state=0)
+
+        # scale the x-train and x-test-fold
+        if scaler_method == "standard":
+            scaler = StandardScaler()
+            scaler.fit(X_train_fold)
+            X_train_fold = scaler.transform(X_train_fold)
+            X_test_fold = scaler.transform(X_test_fold)
+        elif scaler_method == "min_max":
+            scaler = MinMaxScaler()
+            scaler.fit(X_train_fold)
+            X_train_fold = scaler.transform(X_train_fold)
+            X_test_fold = scaler.transform(X_test_fold)
+        else:
+            pass
+        
+
+        # add over/under sampling (do this after scaling)
+        X_train_fold, y_train_fold = under_over_sampler(
+            X_train_fold, y_train_fold, method=uo_sample_method, ratio=imbalance_ratio
+        )
+
+        clone_clf.fit(X_train_fold, y_train_fold)
+
+        (
+            auc_score,
+            roc_score,
+            precision_result,
+            recall_result,
+            f1_result,
+        ) = calculate_scores(clone_clf, X_test_fold, y_test_fold)
+
+        auc_results.append(auc_score)
+        precision_results.append(precision_result)
+        recall_results.append(recall_result)
+        f1_results.append(f1_result)
+        roc_auc_results.append(roc_score)
+
+        if print_results == True:
+            print(
+                "ROC: {:.3%} \t AUC: {:.3%} \t Pr: {:.3%} \t Re: {:.3%} \t F1: {:.3%}".format(
+                    roc_score, auc_score, precision_result, recall_result, f1_result
+                )
+            )
+
+    if print_results == True:
+        print("\033[1m", "\nFinal Results:", "\033[0m")
+        print(
+            "ROC: {:.3%} \t AUC: {:.3%} \t Pr: {:.3%} \t Re: {:.3%} \t F1: {:.3%}".format(
+                np.sum(roc_auc_results) / k_fold_no,
+                np.sum(auc_results) / k_fold_no,
+                np.sum(precision_results) / k_fold_no,
+                np.sum(recall_results) / k_fold_no,
+                np.sum(f1_results) / k_fold_no,
+            )
+        )
+
+        # standard deviations
+        print(
+            "Std: {:.3%} \t Std: {:.3%} \t Std: {:.3%} \t Std: {:.3%} \t Std: {:.3%}".format(
+                np.std(roc_auc_results),
+                np.std(auc_results),
+                np.std(precision_results),
+                np.std(recall_results),
+                np.std(f1_results),
+            )
+        )
+
+    result_dict = {
+
+        "roc_auc_score": np.sum(roc_auc_results) / k_fold_no,
+        "roc_auc_std": np.std(roc_auc_results),
+        "roc_auc_min": np.min(roc_auc_results),
+        "roc_auc_max": np.max(roc_auc_results),
+        "auc_score": np.sum(auc_results) / k_fold_no,
+        "auc_std": np.std(auc_results),
+        "auc_min": np.min(auc_results),
+        "auc_max": np.max(auc_results),
+        "f1_score": np.sum(f1_results) / k_fold_no,
+        "f1_std": np.std(f1_results),
+        "f1_min": np.min(f1_results),
+        "f1_max": np.max(f1_results),
+        "precision": np.sum(precision_results) / k_fold_no,
+        "precision_std": np.std(precision_results),
+        "precision_min": np.min(precision_results),
+        "precision_max": np.max(precision_results),
+        "recall": np.sum(recall_results) / k_fold_no,
+        "recall_std": np.std(recall_results),
+        "recall_min": np.min(recall_results),
+        "recall_max": np.max(recall_results),
+
+    }
+
+    # when to use ROC vs. precision-recall curves, Jason Brownlee http://bit.ly/38vEgnW
+    # https://stats.stackexchange.com/questions/113326/what-is-a-good-auc-for-a-precision-recall-curve
+
+    if train_on_all == True:
+        # now scale and fit the data on the entire training set
+        new_clf = clone(clf)
+
+        # scale the x-train and x-test-fold
+        if scaler_method == "standard":
+            scaler = StandardScaler()
+            scaler.fit(X_train)
+            X_train = scaler.transform(X_train)
+
+        elif scaler_method == "min_max":
+            scaler = MinMaxScaler()
+            scaler.fit(X_train)
+            X_train = scaler.transform(X_train)
+
+        else:
+            pass
+
+        X_train, y_train = under_over_sampler(
+            X_train, y_train, method=uo_sample_method, ratio=imbalance_ratio
+        )
+        # print("Training on All Data")
+
+        new_clf.fit(X_train, y_train)
+
+        return result_dict, scaler, new_clf
+
+    else:
+
+        return result_dict, scaler, ""
+
 
 
 def classifier_train(
@@ -361,7 +576,7 @@ def classifier_train(
         X_train, y_train = under_over_sampler(
             X_train, y_train, method=uo_sample_method, ratio=imbalance_ratio
         )
-        print("Training on All Data")
+        # print("Training on All Data")
 
         new_clf.fit(X_train, y_train)
 

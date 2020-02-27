@@ -12,6 +12,7 @@ from scipy.stats import uniform
 from functions import (
     under_over_sampler,
     classifier_train,
+    classifier_train_manual,
     make_generic_df,
     get_xy_from_df,
     plot_precision_recall_vs_threshold,
@@ -49,17 +50,17 @@ warnings.warn = warn
 
 # set a seed for the parameter sampler
 sampler_seed = random.randint(0, 2 ** 16)
-no_iterations = 5000
+no_iterations = 30000
 
 # create list of tools that we want to look over
-# these are only the tools that we know we have wear-failures
+# these are only the tools that we know we have wear-failures [57, 54, 32, 36, 22, 8, 2]
 tool_list_all = [57, 54, 32, 36, 22, 8, 2]
-tool_list_some = [57, 32, 22, 8, 2]
+tool_list_some = [57, 32, 22, 8, 2, 36]
 
 # other parameters
 scaler_methods = ["standard", "min_max"]
-imbalance_ratios = [0.1, 0.3, 0.5, 0.7, 0.8, 1]
-average_across_indices = [True, False]
+imbalance_ratios = [0.5,0.8,1]
+average_across_indices = [True,False]
 
 
 # list of classifiers to test
@@ -80,7 +81,7 @@ over_under_sampling_methods = [
     "random_under_bootstrap",
     "smote",
     "adasyn",
-    None,
+    # None,
 ]
 
 # no cut indices past 9 that are valid
@@ -90,18 +91,50 @@ index_list = [
     list(range(1, 9)),
     list(range(1, 8)),
     list(range(2, 8)),
+    list(range(3, 7)),
     list(range(2, 9)),
-    list(range(2, 10))
-]  
+    list(range(2, 10)),
+]
+
+#############################################################################
+# test and train folds
+test_fold = [
+    "2018-10-23",
+    "2018-11-15",
+    "2018-11-16",
+    "2018-11-19",
+    "2019-09-11",
+    "2019-09-13",
+]
+
+train_fold_1 = ["2018-11-21", "2019-01-25", "2019-01-28"]
+train_fold_2 = [
+    "2019-01-29",
+    "2019-01-30",
+    "2019-02-01",
+    "2019-02-08",
+    "2019-09-10",
+    "2019-09-12",
+    "2018-11-20",
+    "2019-02-11",
+]
+train_fold_3 = ["2019-02-04", "2019-02-05", "2019-02-07"]
+
+train_folds = [train_fold_1, train_fold_2, train_fold_3]
+train_dates_all = [date for sublist in train_folds for date in sublist]
 
 
 #############################################################################
 # start by loading the csv with the features
+file_folder = Path(
+    "/home/tim/Documents/Checkfluid-Project/data/processed/"
+    "_tables/low_level_labels_created_2020-01-30"
+)
 
 # for HPC
-file_folder = Path(
-    "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_level_labels_created_2020-01-30"
-)
+# file_folder = Path(
+#     "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_level_labels_created_2020-01-30"
+# )
 
 file = file_folder / "low_level_labels_created_2020-01-27.csv"
 
@@ -115,11 +148,21 @@ df["failed"].fillna(
     0, inplace=True, downcast="int"
 )  # replace NaN in 'failed' col with 0
 
-# create a test and train set
-df_test = df[df["date"] >= "2019-02-08"].copy().reset_index(drop=True)
-df_train = (
-    df[df["date"] < "2019-02-22"].copy().reset_index(drop=True)
-)  # This is our train set
+# function to convert pandas column to datetime format
+def convert_to_datetime(cols):
+    unix_date = cols[0]
+    value = datetime.fromtimestamp(unix_date)
+    return value
+
+
+# apply 'date_ymd' column to dataframe
+df["date"] = df[["unix_date"]].apply(convert_to_datetime, axis=1)
+# convert to a period, and then string
+df["date_ymd"] = pd.to_datetime(df["date"], unit="s").dt.to_period("D").astype(str)
+
+
+# create train set
+df_train = df[df["date_ymd"].isin(train_dates_all)].reset_index(drop=True).copy()
 
 #############################################################################
 # build the parameters to search over
@@ -135,7 +178,7 @@ for feat in list(df_train.columns):
 # parameter dictionary for random sampler to go over
 parameters_sample_dict = {
     "no_tools": sp_randint(0, len(tool_list_some)),
-    "no_feat": sp_randint(1, len(feat_generic_all)),
+    "no_feat": sp_randint(1, 25), # sp_randint(1, len(feat_generic_all))
     "classifier_used": classifier_list_all,
     "average_across_index": average_across_indices,
     "uo_method": over_under_sampling_methods,
@@ -158,17 +201,23 @@ p_list = list(
 
 date_time = datetime.now().strftime("%Y.%m.%d-%H.%M.%S")
 
-for i, p in enumerate(p_list):
+for k, p in enumerate(p_list):
 
     # set random.seed
     random.seed(p["parameter_sampler_random_int"])
 
     # get specific parameters
     clf_name = str(p["classifier_used"]).split(" ")[1]
+
     tool_list = sorted(
         random.sample(tool_list_some, p["no_tools"])
-        + random.sample([54, 36], random.randint(1, 2))
-    )
+        + [54])
+
+    # tool_list = sorted(
+    #     [54]
+    #     + random.sample([36], random.randint(0, 1))
+    # )
+
     feat_list = sorted(random.sample(feat_generic_all, p["no_feat"]))
     indices_to_keep = p["index_list"]
     to_avg = p["average_across_index"]
@@ -204,7 +253,7 @@ for i, p in enumerate(p_list):
     # print('original tool_list:', tool_list)
 
     # prepare the data table
-    X_train, y_train, df1 = get_xy_from_df(
+    X_train, y_train, df_ymd_only = get_xy_from_df(
         df_train,
         tool_list=tool_list,
         indices_to_keep=indices_to_keep,
@@ -227,7 +276,7 @@ for i, p in enumerate(p_list):
         # print("Revised Indices: ", indices_to_keep)
         # print("Revised tool_list: ", tool_list)
 
-        X_train, y_train, df1 = get_xy_from_df(
+        X_train, y_train, df_ymd_only = get_xy_from_df(
             df_train,
             tool_list=tool_list,
             indices_to_keep=indices_to_keep,
@@ -255,21 +304,23 @@ for i, p in enumerate(p_list):
 
     # train the model
     try:
-        result_dict, _, _ = classifier_train(
+        result_dict, _, _ = classifier_train_manual(
             X_train,
             y_train,
+            df_ymd_only,
+            train_folds,
             clf,
             scaler_method=scaler_method,
             uo_sample_method=uo_method,
             imbalance_ratio=imbalance_ratio,
             train_on_all=False,
-            print_results=False,
+            print_results=True,
         )
 
         df_result_dict = pd.DataFrame.from_dict(result_dict, orient="index").T
         df_result_dict.astype("float16").dtypes
 
-        if i == 0:
+        if k == 0:
             df_results = pd.concat([df_gpam, df_cpam, df_result_dict], axis=1)
         else:
             df_results = df_results.append(
@@ -277,13 +328,13 @@ for i, p in enumerate(p_list):
             )
 
         # save directory for when on the HPC
-        save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
-        # save_directory = Path().absolute()
+        # save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
+        save_directory = Path("temp_results/")
 
         file_save_name = "temp_result_{}_{}_{}.csv".format(
             str(date_time), str(sys.argv[1]), str(sampler_seed)
         )
-        if i % 10 == 0:
+        if k % 20 == 0:
             df_results.to_csv(save_directory / file_save_name, index=False)
 
     except ValueError as err:
