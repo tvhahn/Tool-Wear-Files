@@ -126,15 +126,15 @@ train_dates_all = [date for sublist in train_folds for date in sublist]
 
 #############################################################################
 # start by loading the csv with the features
-file_folder = Path(
-    "/home/tim/Documents/Checkfluid-Project/data/processed/"
-    "_tables/low_level_labels_created_2020-01-30"
-)
+# file_folder = Path(
+#     "/home/tim/Documents/Checkfluid-Project/data/processed/"
+#     "_tables/low_level_labels_created_2020-01-30"
+# )
 
 # for HPC
-# file_folder = Path(
-#     "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_level_labels_created_2020-01-30"
-# )
+file_folder = Path(
+    "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_level_labels_created_2020-01-30"
+)
 
 file = file_folder / "low_level_labels_created_2020-01-27.csv"
 
