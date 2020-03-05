@@ -98,27 +98,48 @@ index_list = [
 
 #############################################################################
 # test and train folds
+# failures for tool 54 on following dates:
+    # 2018-11-15
+    # 2019-01-28
+    # 2019-01-29
+    # 2019-01-30
+    # 2019-02-04
+    # 2019-02-07
+    # 2019-02-08
+    # 2019-09-11 - These are resampled into pickle files (in case that matters)
+    # 2019-11-27
+
 test_fold = [
     "2018-10-23",
-    "2018-11-15",
+    "2018-11-15", # failures
     "2018-11-16",
     "2018-11-19",
-    "2019-09-11",
+    "2019-09-11", # failures
     "2019-09-13",
 ]
 
-train_fold_1 = ["2018-11-21", "2019-01-25", "2019-01-28"]
+train_fold_1 = [
+    "2018-11-21", 
+    "2019-01-25", 
+    "2019-01-28", # failures
+    "2019-11-27", # failures
+    ]
+
 train_fold_2 = [
-    "2019-01-29",
-    "2019-01-30",
+    "2019-01-29", # failures
+    "2019-01-30", # failures
     "2019-02-01",
-    "2019-02-08",
+    "2019-02-08", # failures
     "2019-09-10",
     "2019-09-12",
     "2018-11-20",
     "2019-02-11",
 ]
-train_fold_3 = ["2019-02-04", "2019-02-05", "2019-02-07"]
+train_fold_3 = [
+    "2019-02-04", # failures
+    "2019-02-05", 
+    "2019-02-07", # failures  
+    ]
 
 train_folds = [train_fold_1, train_fold_2, train_fold_3]
 train_dates_all = [date for sublist in train_folds for date in sublist]
@@ -328,8 +349,8 @@ for k, p in enumerate(p_list):
             )
 
         # save directory for when on the HPC
-        # save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
-        save_directory = Path("temp_results/")
+        save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
+        # save_directory = Path("temp_results/")
 
         file_save_name = "temp_result_{}_{}_{}.csv".format(
             str(date_time), str(sys.argv[1]), str(sampler_seed)
