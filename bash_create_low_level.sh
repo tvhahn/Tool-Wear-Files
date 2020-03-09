@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --time=00:30:00 # 30 minutes
-#SBATCH --array=1-92
-#SBATCH --mem=1G
+#SBATCH --time=01:00:00 # 30 minutes
+#SBATCH --array=1-111
+#SBATCH --mem=2G
 #SBATCH --mail-type=ALL               # Type of email notification- BEGIN,END,F$
 #SBATCH --mail-user=18tcvh@queensu.ca   # Email to which notifications will be $
 ## How to use arrays: https://docs.computecanada.ca/wiki/Job_arrays
