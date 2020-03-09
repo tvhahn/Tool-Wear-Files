@@ -1,5 +1,14 @@
 """Load Raw Cut Files
 
+VERSION 1.1.0
+
+### CHANGES IN VERSION 1.1.0
+2020.03.06:
+    - Added new feature engineering functions (feat_freq_pk_s2, feat_crest_factor,
+    feat_tdh_estimate) to feature_engineering.py
+    
+###
+
 This module contains functions that take raw cut files from a Fanuc CNC machine
 and output a standard format as a pandas dataframe. Additional helper functions
 are also included.
@@ -187,10 +196,21 @@ def extract_data_pickle(file):
     df = d[unixtime][0]
     df = df.astype(dtype="float32")  # cast columns as float32
     df = rename_cols_df(df)  # standardize column names
-    df.drop(["time"], axis=1, inplace=True)  # remove the "index" column
+    try:
+        df.drop(["time"], axis=1, inplace=True)  # remove the "index" column
+    except:
+        pass
 
     # cast some of the columns in their native datatype
-    df = df.astype(dict_int16_columns)
+    try:
+        df = df.astype(dict_int16_columns)
+    except:
+        dict_int16_columns = {
+            "cut_signal": "int16",
+            "tool_no": "int16",
+        }
+
+        df = df.astype(dict_int16_columns)
 
     return (df, unixtime)
 
@@ -314,7 +334,16 @@ def extract_data_mat(m):
     df = df.astype("float32")
 
     # cast some of the columns in their native datatype
-    df = df.astype(dict_int16_columns)
+    try:
+        df = df.astype(dict_int16_columns)
+    except:
+        dict_int16_columns = {
+            "current_main": "int16",
+            "current_sub": "int16",
+            # "cut_signal": "int16",
+            "tool_no": "int16",
+        }
+        df = df.astype(dict_int16_columns)
 
     return (df, unixtime)
 

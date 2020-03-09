@@ -1,5 +1,14 @@
 """Create Features from Cut Signals
 
+VERSION 1.1.0
+
+### CHANGES IN VERSION 1.1.0
+2020.03.06:
+    - 
+###
+
+
+
 This module contains functions can be applied to cut signals to create 
 features. Generally, these features will be appended onto a table that
 contains information of all the cuts (e.g. low_level_cut_labels.csv).
@@ -83,6 +92,20 @@ def feat_kurtosis(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_i
     else:
         return kurtosis(df[signal_name].astype("float64"))
 
+
+def feat_crest_factor(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
+    """Calculates the kurtosis of a signal"""
+    
+    if spindle_main_running is False and spindle_of_interest=='spindle_main':
+        return ""
+    elif spindle_main_running is True and spindle_of_interest=='spindle_sub':
+        return ""
+    else:
+        x = df[signal_name].astype("float64")
+        crest_factor = (np.max(x) / np.sqrt(np.mean(x ** 2)))
+
+        return crest_factor
+
 def calc_fft(y, N):
     '''Calculate the FFT of a signal
     
@@ -97,6 +120,7 @@ def calc_fft(y, N):
     '''
     
     y = signal.detrend(y,type == 'constant') # Detrended signal
+    # y *= np.hamming(N) # apply the window, if desired (unsure if this is effective)
     T = 1.0 / 1000.0 # sample spacing
     xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
     
@@ -122,6 +146,22 @@ def feat_freq_pk_s1(df, N, yf, xf, spindle_main_running, signal_name, spindle_of
         pk_s1 = np.max(df_fft['amp'][df_fft['freq'] < 50])
         return pk_s1
 
+def feat_freq_pk_s2(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
+    '''Calculate the amplitude of the second harmonic of the cutting frequency'''
+    
+    if spindle_main_running is False and spindle_of_interest=='spindle_main':
+        return ""
+    elif spindle_main_running is True and spindle_of_interest=='spindle_sub':
+        return ""
+    else:
+    
+        # convert to dataframe for easy manipulation
+        df_fft = pd.DataFrame(np.vstack((yf, xf)).T,columns=['amp','freq'])
+
+        # select the maximum amplitude below a certain frequency threshold
+        pk_s2 = np.max(df_fft['amp'][df_fft['freq'] > 50])
+        return pk_s2
+
 def feat_freq_pk_s1_norm(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
     '''Calculate the normalized amplitude of the first harmonic of the cutting frequency'''
 
@@ -140,6 +180,25 @@ def feat_freq_pk_s1_norm(df, N, yf, xf, spindle_main_running, signal_name, spind
         pk_s1_norm = np.max(df_fft['amp'][df_fft['freq'] < 50]) / y_avg
     
         return pk_s1_norm
+
+def feat_freq_pk_s2_norm(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
+    '''Calculate the normalized amplitude of the second harmonic of the cutting frequency'''
+
+    if spindle_main_running is False and spindle_of_interest=='spindle_main':
+        return ""
+    elif spindle_main_running is True and spindle_of_interest=='spindle_sub':
+        return ""
+    else:
+    
+        y_avg = np.mean(df[signal_name].to_numpy(dtype='float64'))
+
+        # convert to dataframe for easy manipulation
+        df_fft = pd.DataFrame(np.vstack((yf, xf)).T,columns=['amp','freq'])
+        
+        # select the maximum amplitude below a certain frequency threshold
+        pk_s2_norm = np.max(df_fft['amp'][df_fft['freq'] > 50]) / y_avg
+    
+        return pk_s2_norm
 
 def feat_freq_mean(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
     '''Calculate the mean of the of the cutting frequency'''
@@ -161,6 +220,20 @@ def feat_freq_std(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_i
         return ""
     else:
         return np.std(yf)
+
+def feat_tdh_estimate(df, N, yf, xf, spindle_main_running, signal_name, spindle_of_interest):
+    '''Calculate the total-harmonic-distortion estimate (in percentage)'''
+    
+    if spindle_main_running is False and spindle_of_interest=='spindle_main':
+        return ""
+    elif spindle_main_running is True and spindle_of_interest=='spindle_sub':
+        return ""
+    else:
+        # use scipy find_peaks function
+        # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
+        peaks, _ = signal.find_peaks(yf, height=5, distance=40)
+
+        return np.sqrt(np.sum(yf[peaks][1:] ** 2))/yf[peaks][0]
 
 
 # _#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#_#
