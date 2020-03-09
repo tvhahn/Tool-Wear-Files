@@ -28,16 +28,21 @@ from load_data import (
     extract_data_csv,
     low_level_df,
 )
+
 from feature_engineering import (
     feat_min_value,
     feat_max_value,
     feat_rms_value,
     feat_std_value,
     feat_kurtosis,
+    feat_crest_factor,
     feat_freq_pk_s1,
     feat_freq_pk_s1_norm,
+    feat_freq_pk_s2,
+    feat_freq_pk_s2_norm,
     feat_freq_mean,
     feat_freq_std,
+    feat_tdh_estimate,
 )
 
 # define features that you want calculated on low_level_df
@@ -54,10 +59,18 @@ features = {"min_current_main":[feat_min_value, "current_main", 'spindle_main'],
             "std_current_sub": [feat_std_value, "current_sub", 'spindle_sub'],       
             "kur_current_main":[feat_kurtosis, "current_main", 'spindle_main'],
             "kur_current_sub":[feat_kurtosis, "current_sub", 'spindle_sub'],
+            "crest_fact_current_main": [feat_crest_factor, "current_main", 'spindle_main'],
+            "crest_fact_current_sub": [feat_crest_factor, "current_sub", 'spindle_sub'],
             "freq_pks1_current_main": [feat_freq_pk_s1, "current_main", 'spindle_main'], 
             "freq_pks1_current_sub": [feat_freq_pk_s1, "current_sub", 'spindle_sub'],
             "freq_pks1_norm_current_main":[feat_freq_pk_s1_norm, "current_main", 'spindle_main'],
             "freq_pks1_norm_current_sub":[feat_freq_pk_s1_norm, "current_sub", 'spindle_sub'],
+            "freq_pks2_current_main": [feat_freq_pk_s2, 'current_main', 'spindle_main'], 
+            "freq_pks2_current_sub": [feat_freq_pk_s2, "current_sub", 'spindle_sub'],
+            "freq_pks2_norm_current_main": [feat_freq_pk_s2_norm, "current_main", 'spindle_main'],
+            "freq_pks2_norm_current_sub": [feat_freq_pk_s2_norm, "current_sub", 'spindle_sub'],
+            "freq_tdh_est_current_main": [feat_tdh_estimate, "current_main", 'spindle_main'],
+            "freq_tdh_est_current_sub": [feat_tdh_estimate, "current_sub", 'spindle_sub'],
             "freq_mean_current_main": [feat_freq_mean, "current_main", 'spindle_main'], 
             "freq_mean_current_sub": [feat_freq_mean, "current_sub", 'spindle_sub'],
             "freq_std_current_main": [feat_freq_std, "current_main", 'spindle_main'], 
@@ -66,11 +79,11 @@ features = {"min_current_main":[feat_min_value, "current_main", 'spindle_main'],
 
 # location of the high_level csv that has been labelled with faile/not-failed labels
 high_level_label_location = Path(
-    "_label_csv_data/high_level_labels_MASTER_2019-11-27_15before_nobroken.csv"
+    "_label_csv_data/high_level_labels_MASTER_update2020-03-06_new-jan-may-data.csv"
 )
 
 # location of the zip folders containing the split pickles
-zip_path = Path('/home/tvhahn/projects/def-mechefsk/tvhahn/split_data_stable_speed_no_pad_ind_2020.01.21_ZIP')
+zip_path = Path('/home/tvhahn/projects/def-mechefsk/tvhahn/split_data_ignore_speed_no_pad_2020.03.06_ZIP')
 
 # setup the location where the split cut data will be stored.
 # folder location will be created if does not already exist
