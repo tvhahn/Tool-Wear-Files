@@ -120,7 +120,7 @@ def calc_fft(y, N):
     '''
     
     y = signal.detrend(y,type == 'constant') # Detrended signal
-    # y *= np.hamming(N) # apply the window, if desired (unsure if this is effective)
+    y *= np.hamming(N) # apply the window, if desired (unsure if this is effective)
     T = 1.0 / 1000.0 # sample spacing
     xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
     
@@ -231,7 +231,8 @@ def feat_tdh_estimate(df, N, yf, xf, spindle_main_running, signal_name, spindle_
     else:
         # use scipy find_peaks function
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
-        peaks, _ = signal.find_peaks(yf, height=5, distance=40)
+        # peaks, _ = signal.find_peaks(yf, height=5, distance=40)
+        peaks, _ = signal.find_peaks(yf, height=5, distance=int(N/15))
 
         return np.sqrt(np.sum(yf[peaks][1:] ** 2))/yf[peaks][0]
 
