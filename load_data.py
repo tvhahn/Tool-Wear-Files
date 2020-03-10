@@ -3,10 +3,11 @@
 VERSION 1.1.0
 
 ### CHANGES IN VERSION 1.1.0
+
 2020.03.06:
     - Added new feature engineering functions (feat_freq_pk_s2, feat_crest_factor,
     feat_tdh_estimate) to feature_engineering.py
-    
+
 ###
 
 This module contains functions that take raw cut files from a Fanuc CNC machine
@@ -708,18 +709,14 @@ def low_level_df(
     features : dict
         Dictionary that contains the column name of the feature to be calculated,
         the feature function, and the signal that the function is to be applied to
-        -->     {"column_name_1": [feature_function, "signal_name],
-                 "column_name_2": [feature_function, "signal_name]"
+        -->     {"column_name_1": [feature_function, "signal_name", "spindle_main],
+                 "column_name_2": [feature_function, "signal_name", "spindle_sub]"
                 }
         e.g.
-        features = {"min_current_main":[feat_min_value, "current_main"],
-                    "max_current_main":[feat_max_value, "current_main"],
-                    "min_current_sub":[feat_min_value, "current_sub"],
-                    "max_current_sub":[feat_max_value, "current_sub"],
-                    "rms_current_main":[feat_rms_value, "current_main"],
-                    "rms_current_sub":[feat_rms_value, "current_sub"],
-                    "std_current_main": [feat_std_value, "current_main"], 
-                    "std_current_sub": [feat_std_value, "current_sub"],
+        features = {"min_current_main":[feat_min_value, "current_main", 'spindle_main'],
+                    "max_current_main":[feat_max_value, "current_main", 'spindle_main'],
+                    "min_current_sub":[feat_min_value, "current_sub", 'spindle_sub'],
+                    "max_current_sub":[feat_max_value, "current_sub", 'spindle_sub'],
                    }
     
     svd_feature : Boolean
