@@ -232,7 +232,7 @@ def feat_tdh_estimate(df, N, yf, xf, spindle_main_running, signal_name, spindle_
         # use scipy find_peaks function
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html
         # peaks, _ = signal.find_peaks(yf, height=5, distance=40)
-        peaks, _ = signal.find_peaks(yf, height=5, distance=int(N/15))
+        peaks, _ = signal.find_peaks(yf, height=1, distance=10)
 
         return np.sqrt(np.sum(yf[peaks][1:] ** 2))/yf[peaks][0]
 
