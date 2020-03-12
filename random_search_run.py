@@ -50,7 +50,7 @@ warnings.warn = warn
 
 # set a seed for the parameter sampler
 sampler_seed = random.randint(0, 2 ** 16)
-no_iterations = 4
+no_iterations = 30000
 
 # create list of tools that we want to look over
 # these are only the tools that we know we have wear-failures [57, 54, 32, 36, 22, 8, 2]
@@ -363,7 +363,7 @@ for k, p in enumerate(p_list):
         file_save_name = "temp_result_{}_{}_{}.csv".format(
             str(date_time), str(sys.argv[1]), str(sampler_seed)
         )
-        if k % 20 == 0:
+        if k % 10 == 0:
             df_results.to_csv(save_directory / file_save_name, index=False)
 
     except ValueError as err:
