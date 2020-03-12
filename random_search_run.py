@@ -50,7 +50,7 @@ warnings.warn = warn
 
 # set a seed for the parameter sampler
 sampler_seed = random.randint(0, 2 ** 16)
-no_iterations = 30000
+no_iterations = 4
 
 # create list of tools that we want to look over
 # these are only the tools that we know we have wear-failures [57, 54, 32, 36, 22, 8, 2]
@@ -108,6 +108,7 @@ index_list = [
     # 2019-02-08
     # 2019-09-11 - These are resampled into pickle files (in case that matters)
     # 2019-11-27
+    # 2019-01-23 - These are from January data without speed
 
 test_fold = [
     "2018-10-23",
@@ -123,6 +124,8 @@ train_fold_1 = [
     "2019-01-25", 
     "2019-01-28", # failures
     "2019-11-27", # failures
+    "2019-01-23", # failures, from Jan without speed
+    "2019-05-03",
     ]
 
 train_fold_2 = [
@@ -134,11 +137,16 @@ train_fold_2 = [
     "2019-09-12",
     "2018-11-20",
     "2019-02-11",
+    "2019-01-22", # from Jan withough speed
+    "2019-05-04",
 ]
+
 train_fold_3 = [
     "2019-02-04", # failures
     "2019-02-05", 
-    "2019-02-07", # failures  
+    "2019-02-07", # failures
+    "2019-05-06",
+    "2019-01-22", # from Jan without speed  
     ]
 
 train_folds = [train_fold_1, train_fold_2, train_fold_3]
@@ -149,15 +157,15 @@ train_dates_all = [date for sublist in train_folds for date in sublist]
 # start by loading the csv with the features
 # file_folder = Path(
 #     "/home/tim/Documents/Checkfluid-Project/data/processed/"
-#     "_tables/low_level_labels_created_2020-01-30"
+#     "_tables/low_levels_labels_created_2020-03-11"
 # )
 
 # for HPC
 file_folder = Path(
-    "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_level_labels_created_2020-01-30"
+    "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_level_labels_created_2020-03-11"
 )
 
-file = file_folder / "low_level_labels_created_2020-01-27.csv"
+file = file_folder / "low_level_labels_created_2020.03.11_v3.csv"
 
 df = pd.read_csv(file)
 
