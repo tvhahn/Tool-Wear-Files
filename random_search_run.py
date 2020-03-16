@@ -162,7 +162,7 @@ train_dates_all = [date for sublist in train_folds for date in sublist]
 
 # for HPC
 file_folder = Path(
-    "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_level_labels_created_2020-03-11"
+    "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_levels_labels_created_2020-03-11/"
 )
 
 file = file_folder / "low_level_labels_created_2020.03.11_v3.csv"
