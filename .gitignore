@@ -130,3 +130,7 @@ dmypy.json
 
 # Other
 .vscode/
+/sample_csv_combine
+/interim_data_results
+/zip_interim_sample_data
+

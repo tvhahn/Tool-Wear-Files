@@ -359,7 +359,7 @@ for k, p in enumerate(p_list):
         file_save_name = "temp_result_{}_{}_{}.csv".format(
             str(date_time), str(sys.argv[1]), str(sampler_seed)
         )
-        if k % 1 == 0:
+        if k % 10 == 0:
             df_results.to_csv(save_directory / file_save_name, index=False)
 
     except ValueError as err:
