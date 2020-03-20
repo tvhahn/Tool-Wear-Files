@@ -50,7 +50,7 @@ warnings.warn = warn
 
 # set a seed for the parameter sampler
 sampler_seed = random.randint(0, 2 ** 16)
-no_iterations = 30000
+no_iterations = 25
 
 # create list of tools that we want to look over
 # these are only the tools that we know we have wear-failures [57, 54, 32, 36, 22, 8, 2]
@@ -65,14 +65,14 @@ average_across_indices = [True,False]
 
 # list of classifiers to test
 classifier_list_all = [
-    random_forest_classifier,
-    knn_classifier,
-    logistic_regression,
-    sgd_classifier,
-    ridge_classifier,
-    svm_classifier,
+    # random_forest_classifier,
+    # knn_classifier,
+    # logistic_regression,
+    # sgd_classifier,
+    # ridge_classifier,
+    # svm_classifier,
     gaussian_nb_classifier,
-    xgboost_classifier,
+    # xgboost_classifier,
 ]
 
 over_under_sampling_methods = [
@@ -137,7 +137,7 @@ train_fold_2 = [
     "2019-09-12",
     "2018-11-20",
     "2019-02-11",
-    "2019-01-22", # from Jan withough speed
+    "2019-01-24", # i forgot this one earlier
     "2019-05-04",
 ]
 
@@ -278,8 +278,6 @@ for k, p in enumerate(p_list):
         "initial_script_seed": sampler_seed,
     }
 
-    # print('original indices_to_keep:', indices_to_keep)
-    # print('original tool_list:', tool_list)
 
     # prepare the data table
     X_train, y_train, df_ymd_only = get_xy_from_df(
@@ -302,8 +300,6 @@ for k, p in enumerate(p_list):
             random.sample(tool_list_some, p["no_tools"])
             + random.sample([54, 36], random.randint(1, 2))
         )
-        # print("Revised Indices: ", indices_to_keep)
-        # print("Revised tool_list: ", tool_list)
 
         X_train, y_train, df_ymd_only = get_xy_from_df(
             df_train,
@@ -343,11 +339,11 @@ for k, p in enumerate(p_list):
             uo_sample_method=uo_method,
             imbalance_ratio=imbalance_ratio,
             train_on_all=False,
-            print_results=True,
+            print_results=False,
         )
 
         df_result_dict = pd.DataFrame.from_dict(result_dict, orient="index").T
-        df_result_dict.astype("float16").dtypes
+        # df_result_dict.astype("float16").dtypes
 
         if k == 0:
             df_results = pd.concat([df_gpam, df_cpam, df_result_dict], axis=1)
@@ -363,7 +359,7 @@ for k, p in enumerate(p_list):
         file_save_name = "temp_result_{}_{}_{}.csv".format(
             str(date_time), str(sys.argv[1]), str(sampler_seed)
         )
-        if k % 10 == 0:
+        if k % 1 == 0:
             df_results.to_csv(save_directory / file_save_name, index=False)
 
     except ValueError as err:

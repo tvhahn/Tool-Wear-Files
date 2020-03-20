@@ -22,6 +22,7 @@ from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import SMOTE, ADASYN
 from collections import Counter
 from itertools import combinations
+import random
 
 # function for selecting a tool in a df, and returning a df with generic names
 def make_generic_df(df, tool_no):
@@ -181,6 +182,46 @@ def under_over_sampler(X, y, method=None, ratio=0.5):
         return X, y
 
 
+def trim_fold_dates(train_folds):
+    '''Function that randomly trims 1-2 dates from a fold. This will be used
+    to see which "dates" most negatively affect the model performance
+    '''
+    train_dates_all = [date for sublist in train_folds for date in sublist]
+
+    # randomly remove some dates
+    # select the qty to folds to remove dates from (0-3)
+    qty_fold_remove = random.randrange(0, 4)
+
+    # select the qty of dates to remove from each fold (from 1-2)
+    # qty_date_remove = 1
+    qty_date_remove = random.randrange(1, 3)
+
+    # shuffle train-folds
+    random.shuffle(train_folds)
+
+    train_folds_new = []
+
+    if qty_fold_remove == 0:
+        train_folds_new = train_folds
+    else:
+        for i, fold in enumerate(train_folds):
+            if i < qty_fold_remove:
+
+                random.shuffle(fold)
+                fold = fold[qty_date_remove:]
+                train_folds_new.append(fold)
+            else:
+                train_folds_new.append(fold)
+
+    train_dates_all_new = [date for sublist in train_folds_new for date in sublist]
+    train_dates_removed = list(set(train_dates_all)-set(train_dates_all_new))
+    if qty_fold_remove == 0:
+        train_dates_removed = ''
+    else:
+        train_dates_removed = str(train_dates_removed)
+
+    return train_folds, train_dates_removed
+
 def calculate_scores(clf, X_test, y_test):
     """Helper function for calculating a bunch of scores"""
 
@@ -232,7 +273,7 @@ def classifier_train_manual(
         otherwise will blow up
     """
 
-
+    train_folds, dates_remove = trim_fold_dates(train_folds)
     
     # below code is modified from 'Hands on Machine Learning' by Geron (pg. 196)
     roc_auc_results = []
@@ -256,6 +297,8 @@ def classifier_train_manual(
             "What proportion of actual positives were identified correctly?",
         )
 
+
+
     k_fold_combinations = list(combinations(train_folds,len(train_folds)-1))
     dates_all = [date for sublist in train_folds for date in sublist]
 
@@ -263,6 +306,7 @@ def classifier_train_manual(
 
     # implement cross-validation with 
     for i, folds in enumerate(k_fold_combinations):
+        # print('#####', i)
         
         # get the train and test dates for each combination
         train_dates = []
@@ -318,11 +362,26 @@ def classifier_train_manual(
             f1_result,
         ) = calculate_scores(clone_clf, X_test_fold, y_test_fold)
 
+        if i == 0:
+            # print('test dates:',test_dates)
+            auc_results_min_fold_train = sorted(train_dates)
+            auc_results_min_fold_test = sorted(test_dates)
+            # print('auc_results_min_fold_test', auc_results_min_fold_test)
+
+        
+        elif auc_score < np.min(np.array(auc_results)):
+            # these lists will hold the list of dates for the min and max value folds
+            # which is useful for understanding why some folds produce poor results
+            auc_results_min_fold_train = sorted(train_dates)
+            auc_results_min_fold_test = sorted(test_dates)
+            # print(auc_results_min_fold_test)
+
         auc_results.append(auc_score)
         precision_results.append(precision_result)
         recall_results.append(recall_result)
         f1_results.append(f1_result)
         roc_auc_results.append(roc_score)
+
 
         if print_results == True:
             print(
@@ -356,6 +415,7 @@ def classifier_train_manual(
 
     result_dict = {
 
+        "train_dates_removed": dates_remove,
         "roc_auc_score": np.sum(roc_auc_results) / k_fold_no,
         "roc_auc_std": np.std(roc_auc_results),
         "roc_auc_min": np.min(roc_auc_results),
@@ -363,6 +423,8 @@ def classifier_train_manual(
         "auc_score": np.sum(auc_results) / k_fold_no,
         "auc_std": np.std(auc_results),
         "auc_min": np.min(auc_results),
+        "auc_min_fold_train": auc_results_min_fold_train,
+        "auc_min_fold_test": auc_results_min_fold_test,
         "auc_max": np.max(auc_results),
         "f1_score": np.sum(f1_results) / k_fold_no,
         "f1_std": np.std(f1_results),
