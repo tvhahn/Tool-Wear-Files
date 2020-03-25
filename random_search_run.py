@@ -81,7 +81,7 @@ over_under_sampling_methods = [
     "random_under_bootstrap",
     "smote",
     "adasyn",
-    # None,
+    None,
 ]
 
 # no cut indices past 9 that are valid
