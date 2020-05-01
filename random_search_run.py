@@ -54,8 +54,10 @@ no_iterations = 30000
 
 # create list of tools that we want to look over
 # these are only the tools that we know we have wear-failures [57, 54, 32, 36, 22, 8, 2]
-tool_list_all = [57, 54, 32, 36, 22, 8, 2]
-tool_list_some = [57, 32, 22, 8, 2, 36]
+# tool_list_all = [57, 54, 32, 36, 22, 8, 2]
+tool_list_all = [54]
+# tool_list_some = [57, 32, 22, 8, 2, 36]
+tool_list_some = []
 
 # other parameters
 scaler_methods = ["standard", "min_max"]
@@ -67,11 +69,11 @@ average_across_indices = [True,False]
 classifier_list_all = [
     random_forest_classifier,
     knn_classifier,
-    logistic_regression,
+    # logistic_regression,
     sgd_classifier,
-    ridge_classifier,
-    svm_classifier,
-    gaussian_nb_classifier,
+    # ridge_classifier,
+    # svm_classifier,
+    # gaussian_nb_classifier,
     xgboost_classifier,
 ]
 
@@ -298,7 +300,7 @@ for k, p in enumerate(p_list):
         random.seed(p["parameter_sampler_random_int"] + seed_indexer)
         tool_list = sorted(
             random.sample(tool_list_some, p["no_tools"])
-            + random.sample([54, 36], random.randint(1, 2))
+            + random.sample([54], random.randint(1, 2))
         )
 
         X_train, y_train, df_ymd_only = get_xy_from_df(

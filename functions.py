@@ -190,11 +190,12 @@ def trim_fold_dates(train_folds):
 
     # randomly remove some dates
     # select the qty to folds to remove dates from (0-3)
-    qty_fold_remove = random.randrange(0, 4)
+    # qty_fold_remove = random.randrange(0, 4)
+    qty_fold_remove = 0
 
     # select the qty of dates to remove from each fold (from 1-2)
-    # qty_date_remove = 1
-    qty_date_remove = random.randrange(1, 3)
+    qty_date_remove = 0
+    # qty_date_remove = random.randrange(1, 3)
 
     # shuffle train-folds
     random.shuffle(train_folds)
