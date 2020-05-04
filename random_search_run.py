@@ -208,7 +208,8 @@ for feat in list(df_train.columns):
 
 # parameter dictionary for random sampler to go over
 parameters_sample_dict = {
-    "no_tools": sp_randint(0, len(tool_list_some)),
+    # "no_tools": sp_randint(0, len(tool_list_some)),
+    "no_tools": [0],
     "no_feat": sp_randint(1, 25), # sp_randint(1, len(feat_generic_all))
     "classifier_used": classifier_list_all,
     "average_across_index": average_across_indices,
@@ -356,7 +357,7 @@ for k, p in enumerate(p_list):
 
         # save directory for when on the HPC
         save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
-        # save_directory = Path("temp_results/")
+        # save_directory = Path("/home/tim/Documents/Checkfluid-Project/notebooks/1.9-tvh-feat-table/temp_results")
 
         file_save_name = "temp_result_{}_{}_{}.csv".format(
             str(date_time), str(sys.argv[1]), str(sampler_seed)
