@@ -112,6 +112,8 @@ index_list = [
     # 2019-11-27
     # 2019-01-23 - These are from January data without speed
 
+# update 8/6/2020: does not look like we use the 'test_fold'
+# therefore, I have divided the dates into the other three folds
 test_fold = [
     "2018-10-23",
     "2018-11-15", # failures
@@ -128,6 +130,8 @@ train_fold_1 = [
     "2019-11-27", # failures
     "2019-01-23", # failures, from Jan without speed
     "2019-05-03",
+    "2019-09-11", # failures
+    "2019-09-13",
     ]
 
 train_fold_2 = [
@@ -141,6 +145,8 @@ train_fold_2 = [
     "2019-02-11",
     "2019-01-24", # i forgot this one earlier
     "2019-05-04",
+    "2018-11-16",
+    "2018-11-19",
 ]
 
 train_fold_3 = [
@@ -148,7 +154,9 @@ train_fold_3 = [
     "2019-02-05", 
     "2019-02-07", # failures
     "2019-05-06",
-    "2019-01-22", # from Jan without speed  
+    "2019-01-22", # from Jan without speed 
+    "2018-10-23",
+    "2018-11-15", # failures 
     ]
 
 train_folds = [train_fold_1, train_fold_2, train_fold_3]
@@ -167,7 +175,7 @@ file_folder = Path(
     "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_levels_labels_created_2020-03-11/"
 )
 
-file = file_folder / "low_level_labels_created_2020.03.11_v3.csv"
+file = file_folder / "low_level_labels_created_2020.03.11_v3_updated_2020.08.06.csv"
 
 df = pd.read_csv(file)
 
