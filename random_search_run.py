@@ -69,11 +69,11 @@ average_across_indices = [True,False]
 classifier_list_all = [
     random_forest_classifier,
     knn_classifier,
-    # logistic_regression,
+    logistic_regression,
     sgd_classifier,
-    # ridge_classifier,
-    # svm_classifier,
-    # gaussian_nb_classifier,
+    ridge_classifier,
+    svm_classifier,
+    gaussian_nb_classifier,
     xgboost_classifier,
 ]
 
