@@ -27,7 +27,7 @@ def build_classifier_parameter_dict(clf, p_clf):
 def random_forest_classifier(parameter_sampler_random_int):
     parameters_sample_dict = {
         "n_estimators": sp_randint(5, 500),
-        "max_depth": sp_randint(1, 100000),
+        "max_depth": sp_randint(1, 500),
         "random_state": sp_randint(1, 2 ** 16),
         "min_samples_leaf": sp_randint(1, 10),
         "bootstrap": [True, False],
