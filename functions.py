@@ -346,8 +346,8 @@ def classifier_train_manual(
         X_test_fold, y_test_fold = shuffle(X_test_fold, y_test_fold, random_state=0)
 
         imb_ratio = np.sum(y_test_fold)/len(y_test_fold)
-        print('Imbalance ratio, fold {}: {:.2%}'.format(i, imb_ratio))
-        print('No. failures in fold {}: {}'.format(i, np.sum(y_test_fold)))
+        # print('Imbalance ratio, fold {}: {:.2%}'.format(i, imb_ratio))
+        # print('No. failures in fold {}: {}'.format(i, np.sum(y_test_fold)))
 
         # scale the x-train and x-test-fold
         if scaler_method == "standard":

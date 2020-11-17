@@ -67,14 +67,14 @@ average_across_indices = [True,False]
 
 # list of classifiers to test
 classifier_list_all = [
-    # random_forest_classifier,
-    # knn_classifier,
-    # logistic_regression,
-    # sgd_classifier,
-    # ridge_classifier,
-    # svm_classifier,
+    random_forest_classifier,
+    knn_classifier,
+    logistic_regression,
+    sgd_classifier,
+    ridge_classifier,
+    svm_classifier,
     gaussian_nb_classifier,
-    # xgboost_classifier,
+    xgboost_classifier,
 ]
 
 over_under_sampling_methods = [
@@ -175,7 +175,7 @@ file_folder = Path(
     "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_levels_labels_created_2020-03-11/"
 )
 
-# file = file_folder / "low_level_labels_created_2020.03.11_v3_updated_2020.08.06.csv"
+file = file_folder / "low_level_labels_created_2020.03.11_v3_updated_2020.08.06.csv"
 
 df = pd.read_csv(file)
 
@@ -365,7 +365,7 @@ for k, p in enumerate(p_list):
 
         # save directory for when on the HPC
         save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
-        # save_directory = Path("/home/tim/Documents/Checkfluid-Project/notebooks/2.0-refactor-feat-table/temp_results")
+        # save_directory = Path("/home/tim/Documents/Tool-Wear-Files/temp_results")
 
         file_save_name = "temp_result_{}_{}_{}.csv".format(
             str(date_time), str(sys.argv[1]), str(sampler_seed)
