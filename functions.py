@@ -15,6 +15,7 @@ from sklearn.metrics import (
     precision_score,
     recall_score,
     f1_score,
+    matthews_corrcoef
 )
 from sklearn.model_selection import ParameterSampler
 from imblearn.over_sampling import RandomOverSampler
@@ -223,7 +224,7 @@ def trim_fold_dates(train_folds):
 
     return train_folds, train_dates_removed
 
-def calculate_scores(clf, X_test, y_test):
+def calculate_scores(clf, X_test, y_test,):
     """Helper function for calculating a bunch of scores"""
 
     y_pred = clf.predict(X_test)
@@ -239,19 +240,27 @@ def calculate_scores(clf, X_test, y_test):
 
     # need to use decision scores, or probabilities, in roc_score
     precisions, recalls, thresholds = precision_recall_curve(y_test, y_scores)
+    
+    # calculate the number of threshold values
+    # if there is only one threshold value, then we have a straight line in the PR-AUC plot
+    # which means the model is erroneous for that k-fold, and thus, we should ignore the model
+    no_thresholds = len(thresholds)
 
     # calculate the precision recall curve and roc_auc curve
     # when to use ROC vs. precision-recall curves, Jason Brownlee http://bit.ly/38vEgnW
     # https://stats.stackexchange.com/questions/113326/what-is-a-good-auc-for-a-precision-recall-curve
     auc_score = auc(recalls, precisions)
     roc_score = roc_auc_score(y_test, y_scores)
+    matthews_coef = matthews_corrcoef(y_test, y_pred)
+
 
     # calculate precision, recall, f1 scores
     precision_result = precision_score(y_test, y_pred)
     recall_result = recall_score(y_test, y_pred)
     f1_result = f1_score(y_test, y_pred)
 
-    return auc_score, roc_score, precision_result, recall_result, f1_result
+
+    return auc_score, roc_score, matthews_coef, precision_result, recall_result, f1_result, precisions, recalls, thresholds, no_thresholds, y_scores
 
 def classifier_train_manual(
     X_train,
@@ -277,11 +286,14 @@ def classifier_train_manual(
     train_folds, dates_remove = trim_fold_dates(train_folds)
     
     # below code is modified from 'Hands on Machine Learning' by Geron (pg. 196)
+    no_thresholds_list = []
     roc_auc_results = []
     auc_results = []
+    matthews_coef_results = []
     precision_results = []
     recall_results = []
     f1_results = []
+    precision_recall_scores = []
 
     if print_results == True:
     # print definitions of precision / recall
@@ -333,6 +345,10 @@ def classifier_train_manual(
         X_train_fold, y_train_fold = shuffle(X_train_fold, y_train_fold, random_state=0)
         X_test_fold, y_test_fold = shuffle(X_test_fold, y_test_fold, random_state=0)
 
+        imb_ratio = np.sum(y_test_fold)/len(y_test_fold)
+        print('Imbalance ratio, fold {}: {:.2%}'.format(i, imb_ratio))
+        print('No. failures in fold {}: {}'.format(i, np.sum(y_test_fold)))
+
         # scale the x-train and x-test-fold
         if scaler_method == "standard":
             scaler = StandardScaler()
@@ -358,9 +374,15 @@ def classifier_train_manual(
         (
             auc_score,
             roc_score,
+            matthews_coef,
             precision_result,
             recall_result,
             f1_result,
+            precisions, 
+            recalls,
+            thresholds,
+            no_thresholds,
+            y_scores
         ) = calculate_scores(clone_clf, X_test_fold, y_test_fold)
 
         if i == 0:
@@ -377,16 +399,19 @@ def classifier_train_manual(
             auc_results_min_fold_test = sorted(test_dates)
             # print(auc_results_min_fold_test)
 
+        no_thresholds_list.append(no_thresholds)
         auc_results.append(auc_score)
         precision_results.append(precision_result)
         recall_results.append(recall_result)
         f1_results.append(f1_result)
         roc_auc_results.append(roc_score)
+        precision_recall_scores.append([precisions, recalls, thresholds, y_scores,imb_ratio])
+        matthews_coef_results.append(matthews_coef)
 
 
         if print_results == True:
             print(
-                "ROC: {:.3%} \t AUC: {:.3%} \t Pr: {:.3%} \t Re: {:.3%} \t F1: {:.3%}".format(
+                "ROC: {:.3%} \t AUC: {:.3%} \t Pr: {:.3%} \t Re: {:.3%} \t F1: {:.3%}\n".format(
                     roc_score, auc_score, precision_result, recall_result, f1_result
                 )
             )
@@ -417,6 +442,7 @@ def classifier_train_manual(
     result_dict = {
 
         "train_dates_removed": dates_remove,
+        "min_threshold_value": np.min(no_thresholds_list),
         "roc_auc_score": np.sum(roc_auc_results) / k_fold_no,
         "roc_auc_std": np.std(roc_auc_results),
         "roc_auc_min": np.min(roc_auc_results),
@@ -427,6 +453,10 @@ def classifier_train_manual(
         "auc_min_fold_train": auc_results_min_fold_train,
         "auc_min_fold_test": auc_results_min_fold_test,
         "auc_max": np.max(auc_results),
+        "matthews_coef": np.sum(matthews_coef_results) / k_fold_no,
+        "matthews_std": np.std(matthews_coef_results),
+        "matthews_min": np.min(matthews_coef_results),
+        "matthews_max": np.max(matthews_coef_results),
         "f1_score": np.sum(f1_results) / k_fold_no,
         "f1_std": np.std(f1_results),
         "f1_min": np.min(f1_results),
@@ -470,11 +500,11 @@ def classifier_train_manual(
 
         new_clf.fit(X_train, y_train)
 
-        return result_dict, scaler, new_clf
+        return result_dict, scaler, new_clf, precision_recall_scores
 
     else:
 
-        return result_dict, scaler, ""
+        return result_dict, scaler, "", precision_recall_scores
 
 
 

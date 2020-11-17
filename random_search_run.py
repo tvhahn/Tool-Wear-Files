@@ -22,11 +22,11 @@ from functions import (
 from classification_methods import (
     random_forest_classifier,
     knn_classifier,
-    # logistic_regression,
-    # sgd_classifier,
-    # ridge_classifier,
-    # svm_classifier,
-    # gaussian_nb_classifier,
+    logistic_regression,
+    sgd_classifier,
+    ridge_classifier,
+    svm_classifier,
+    gaussian_nb_classifier,
     xgboost_classifier,
 )
 
@@ -50,7 +50,7 @@ warnings.warn = warn
 
 # set a seed for the parameter sampler
 sampler_seed = random.randint(0, 2 ** 16)
-no_iterations = 30000
+no_iterations = 25
 
 # create list of tools that we want to look over
 # these are only the tools that we know we have wear-failures [57, 54, 32, 36, 22, 8, 2]
@@ -69,11 +69,11 @@ average_across_indices = [True,False]
 classifier_list_all = [
     random_forest_classifier,
     knn_classifier,
-    # logistic_regression,
-    # sgd_classifier,
-    # ridge_classifier,
-    # svm_classifier,
-    # gaussian_nb_classifier,
+    logistic_regression,
+    sgd_classifier,
+    ridge_classifier,
+    svm_classifier,
+    gaussian_nb_classifier,
     xgboost_classifier,
 ]
 
@@ -175,7 +175,7 @@ file_folder = Path(
     "/home/tvhahn/projects/def-mechefsk/tvhahn/_tables/low_levels_labels_created_2020-03-11/"
 )
 
-file = file_folder / "low_level_labels_created_2020.03.11_v3_updated_2020.08.06.csv"
+# file = file_folder / "low_level_labels_created_2020.03.11_v3_updated_2020.08.06.csv"
 
 df = pd.read_csv(file)
 
@@ -340,7 +340,7 @@ for k, p in enumerate(p_list):
 
     # train the model
     try:
-        result_dict, _, _ = classifier_train_manual(
+        result_dict, _, _, _ = classifier_train_manual(
             X_train,
             y_train,
             df_ymd_only,
@@ -365,7 +365,7 @@ for k, p in enumerate(p_list):
 
         # save directory for when on the HPC
         save_directory = Path('/home/tvhahn/scratch/_temp_random_search_results')
-        # save_directory = Path("/home/tim/Documents/Checkfluid-Project/notebooks/1.9-tvh-feat-table/temp_results")
+        # save_directory = Path("/home/tim/Documents/Checkfluid-Project/notebooks/2.0-refactor-feat-table/temp_results")
 
         file_save_name = "temp_result_{}_{}_{}.csv".format(
             str(date_time), str(sys.argv[1]), str(sampler_seed)
