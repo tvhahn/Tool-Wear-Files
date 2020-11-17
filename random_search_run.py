@@ -50,7 +50,7 @@ warnings.warn = warn
 
 # set a seed for the parameter sampler
 sampler_seed = random.randint(0, 2 ** 16)
-no_iterations = 25
+no_iterations = 30000
 
 # create list of tools that we want to look over
 # these are only the tools that we know we have wear-failures [57, 54, 32, 36, 22, 8, 2]
