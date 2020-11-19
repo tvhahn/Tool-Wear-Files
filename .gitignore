@@ -134,3 +134,5 @@ dmypy.json
 /interim_data_results
 /zip_interim_sample_data
 
+temp_results/temp_result_2020.11.17-13.18.35_1_60658.csv
+results_1.csv
