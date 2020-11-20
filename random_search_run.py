@@ -218,7 +218,7 @@ for feat in list(df_train.columns):
 parameters_sample_dict = {
     # "no_tools": sp_randint(0, len(tool_list_some)),
     "no_tools": [0],
-    "no_feat": sp_randint(1, 25), # sp_randint(1, len(feat_generic_all))
+    "no_feat": [38], #sp_randint(1, 25), # sp_randint(1, len(feat_generic_all))
     "classifier_used": classifier_list_all,
     "average_across_index": average_across_indices,
     "uo_method": over_under_sampling_methods,
