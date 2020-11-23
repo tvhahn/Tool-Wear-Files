@@ -48,7 +48,7 @@ def random_forest_classifier(parameter_sampler_random_int):
 def xgboost_classifier(parameter_sampler_random_int):
     '''https://xgboost.readthedocs.io/en/latest/python/python_api.html#module-xgboost.sklearn'''
     parameters_sample_dict = {
-        "max_depth": sp_randint(2, 64),
+        "max_depth": sp_randint(1, 64),
         "eta": [0.1,0.3,0.7],
         "objective": ['binary:logistic'],
         "eval_metric": ['error','aucpr'],
